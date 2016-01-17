@@ -43,12 +43,16 @@
                 filter :: filter(),
                 filter_state :: term()}).
 
+-define(FILTER_FUN, fun(X, ok) -> {{ok, X}, ok} end).
+-define(FILTER_STATE, ok).
+
 -export([start_link/3, start_link/4, start_link/5, resize/2,
          active/3, notify/1, post/2]).
 -export([init/1,
          active/2, passive/2, notify/2,
          handle_event/3, handle_sync_event/4, handle_info/3,
          terminate/3, code_change/4]).
+-export([active/1, query/1, query/3]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% API Function Definitions %%%
@@ -94,6 +98,12 @@ resize(Box, NewSize) when NewSize > 0 ->
     gen_fsm:sync_send_all_state_event(Box, {resize, NewSize}).
 
 %% @doc Forces the buffer into an active state where it will
+%% send the data it has accumulated. 
+-spec active(pid()) -> ok.
+active(Box) ->
+    active(Box, ?FILTER_FUN, ?FILTER_STATE).
+
+%% @doc Forces the buffer into an active state where it will
 %% send the data it has accumulated. The fun passed needs to have
 %% two arguments: A message, and a term for state. The function can return,
 %% for each element, a tuple of the form {Res, NewState}, where `Res' can be:
@@ -115,6 +125,21 @@ notify(Box) ->
 -spec post(pid(), term()) -> ok.
 post(Box, Msg) ->
     gen_fsm:send_event(Box, {post, Msg}).
+
+%% @doc query the data had accumulated.
+-spec query(pid()) -> 0 | {list(), integer(), integer()}.
+query(Box) ->
+    query(Box, ?FILTER_FUN, ?FILTER_STATE).
+
+%% @doc query the data had accumulated. The fun passed needs to have
+%% two arguments: A message, and a term for state. The function can return,
+%% for each element, a tuple of the form {Res, NewState}, where `Res' can be:
+%% - `{ok, Msg}' to receive the message in the block that gets shipped
+%% - `drop' to ignore the message
+%% - `skip' to stop removing elements from the stack, and keep them for later.
+-spec query(pid(), filter(), State::term()) -> 0 | {list(), integer(), integer()}.
+query(Box, Fun, FunState) ->
+    gen_fsm:sync_send_all_state_event(Box, {query, Fun, FunState}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_fsm Function Definitions %%%
@@ -179,6 +204,16 @@ handle_event(_Event, StateName, State) ->
 %% @private
 handle_sync_event({resize, NewSize}, _From, StateName, S=#state{buf=Buf}) ->
     {reply, ok, StateName, S#state{buf=resize_buf(NewSize,Buf)}};
+handle_sync_event({query, Fun, FunState}, _From, _StateName, S=#state{buf=Buf}) ->
+    case size(Buf) of
+        0 ->
+            {reply, 0, passive, S};
+        N when N > 0 ->
+            {Msgs, Count, Dropped, NewBuf} = buf_filter(Buf, Fun, FunState),
+            NewState = S#state{buf=NewBuf, filter=undefined, filter_state=undefined},
+
+            {reply, {Msgs, Count, Dropped}, passive, NewState}
+    end;
 handle_sync_event(_Event, _From, StateName, State) ->
     %% die of starvation, caller!
     {next_state, StateName, State}.
