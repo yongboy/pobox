@@ -50,6 +50,7 @@ directly, without notification:
     |   <important stuff>   |--- send it! -->|      +---------+      |
     |                       |                |       |               |
     |                       |<---<messages>--|<---buffer             |
+    |                       |<--query msgs-->|<-------               |
     +-----------------------+                +-----------------------+
 
 To be more detailed, a PO Box is a state machine with an owner process
@@ -121,11 +122,11 @@ them.
 
 ## How to build it
 
-    ./rebar compile
+    make
 
 ## How to run tests
 
-    ./rebar compile ct
+    make ct
 
 ## How to use it
 
@@ -187,9 +188,23 @@ Or you could drop messages that are empty binaries by doing:
        (Msg, State) -> {{ok,Msg}, State}
     end.
 
+In same case you can just calling:
+
+    pobox:active(BoxPid)
+
+with default FilterFun = `fun(X,ok) -> {{ok,X},ok} end` and FilterState = `ok`.
+
 The resulting message sent will be:
 
     {mail, BoxPid, Messages, MessageCount, MessageDropCount}
+
+And you can query the PO Box's data by calling:
+
+    pobox:query(BoxPid, FilterFun, FilterState)
+
+And supply the short way with default FilterFun and FilterState value (as above) by calling:
+
+    pobox:query(BoxPid)
 
 Finally, the PO Box can be forced to notify by calling:
 
