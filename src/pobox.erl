@@ -139,7 +139,7 @@ query(Box) ->
 %% - `skip' to stop removing elements from the stack, and keep them for later.
 -spec query(pid(), filter(), State::term()) -> 0 | {list(), integer(), integer()}.
 query(Box, Fun, FunState) ->
-    gen_fsm:sync_send_all_state_event(Box, {query, Fun, FunState}).
+    gen_fsm:sync_send_all_state_event(Box, {query, Fun, FunState}, 1000).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_fsm Function Definitions %%%
