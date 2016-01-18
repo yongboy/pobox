@@ -261,7 +261,7 @@ node's memory safe.
 The spammer is still going and our PO Box is in passive mode. Let's cut
 to the chase and go directly to the active state:
 
-    7> pobox:active(Box, fun(X,ok) -> {{ok,X},ok} end, ok).
+    7> pobox:active(Box).
     ok
     8> flush().
     Shell got {mail,<0.39.0>,
@@ -272,11 +272,19 @@ to the chase and go directly to the active state:
 
 Nice. We can go back to notification mode too:
 
-    9> pobox:notify(Box).
+    9> pobox:query(Box).
+    {[8045598,8045599,8045600,8045601,8045602,8045603,8045604,
+      8045605,8045606,8045607],
+       10,4226440}
+    10> pobox:notify(Box).
     ok
-    10> flush().
+    11> flush().
     Shell got {mail,new_data}
     ok
+    12> pobox:query(Box).
+    {[18716198,18716199,18716200,18716201,18716202,18716203,
+      18716204,18716205,18716206,18716207],
+       10,10670590}
 
 And keep going on and on and on.
 
