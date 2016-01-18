@@ -336,7 +336,7 @@ This is more a wishlist than a roadmap, in no particular order:
 - Provide default filter functions in a new module
 
 ## Changelog
-
+- 1.0.3: Add pobox:query() interface, and active(BoxPid) for easy use
 - 1.0.2 (master/in progress): explicitly specify `registered` to be `[]` for
                               relx compatibility
 - 1.0.1: fixing bug where manually dropped messages (with the active filter)
