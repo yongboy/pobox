@@ -54,6 +54,8 @@
          terminate/3, code_change/4]).
 -export([active/1, query/1, query/3]).
 
+-export([start_link/6]).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% API Function Definitions %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,6 +90,19 @@ start_link(Name, Owner, Size, Type, StateName) when Size > 0,
                                                     StateName =:= notify orelse
                                                     StateName =:= passive ->
     gen_fsm:start_link(Name, ?MODULE, {Owner, Size, Type, StateName}, []).
+
+-spec start_link(term(), pid(), max(), stack | queue, 'notify' | 'passive', low | normal | high | max) -> {ok, pid()}.
+start_link(Name, Owner, Size, Type, StateName, Priority) when Size > 0,
+                                                              Type =:= queue orelse
+                                                              Type =:= stack orelse
+                                                              Type =:= keep_old,
+                                                              StateName =:= notify orelse
+                                                              StateName =:= passive,
+                                                              Priority =:= low orelse
+                                                              Priority =:= normal orelse
+                                                              Priority =:= high orelse
+                                                              Priority =:= max ->
+    gen_fsm:start_link(Name, ?MODULE, {Owner, Size, Type, StateName}, [{spawn_opt, [{priority, Priority}]}]).
 
 %% @doc Allows to take a given buffer, and make it larger or smaller.
 %% A buffer can be made larger without overhead, but it may take
