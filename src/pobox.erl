@@ -92,6 +92,17 @@ start_link(Name, Owner, Size, Type, StateName) when Size > 0,
     gen_fsm:start_link(Name, ?MODULE, {Owner, Size, Type, StateName}, []).
 
 -spec start_link(term(), pid(), max(), stack | queue, 'notify' | 'passive', low | normal | high | max) -> {ok, pid()}.
+start_link(not_registered, Owner, Size, Type, StateName, Priority) when Size > 0,
+                                                              Type =:= queue orelse
+                                                              Type =:= stack orelse
+                                                              Type =:= keep_old,
+                                                              StateName =:= notify orelse
+                                                              StateName =:= passive,
+                                                              Priority =:= low orelse
+                                                              Priority =:= normal orelse
+                                                              Priority =:= high orelse
+                                                              Priority =:= max ->
+    gen_fsm:start_link(?MODULE, {Owner, Size, Type, StateName}, [{spawn_opt, [{priority, Priority}]}]);
 start_link(Name, Owner, Size, Type, StateName, Priority) when Size > 0,
                                                               Type =:= queue orelse
                                                               Type =:= stack orelse
